@@ -1,0 +1,15 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes: [mongo-data:/data/db]
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: .env.production
+    depends_on: [mongo]
+    ports: ["4000:4000"]
+    volumes: [uploads:/data/uploads]
+volumes:
+  mongo-data:
+  uploads:

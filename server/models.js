@@ -1,0 +1,17 @@
+import mongoose from 'mongoose';
+const { Schema, model } = mongoose; const oid = Schema.Types.ObjectId;
+export const ACTIVE = ['pending', 'reserved', 'checked_in', 'called', 'in_service'];
+export const User = model('User', new Schema({ email: { type: String, unique: true, lowercase: true, trim: true }, name: String, studentNumber: String, course: String, role: { type: String, enum: ['student', 'staff', 'admin'], default: 'student' }, active: { type: Boolean, default: true }, tokenVersion: { type: Number, default: 0 }, window: { type: oid, ref: 'Window' } }, { timestamps: true }));
+export const Department = model('Department', new Schema({ name: String, active: { type: Boolean, default: true } }));
+export const Window = model('Window', new Schema({ number: Number, prefix: { type: String, default: 'R' }, label: String, department: { type: oid, ref: 'Department' }, days: [Number], hours: [Number], capacity: { type: Number, default: 30 }, active: { type: Boolean, default: true }, serving: { type: oid, default: null } }));
+export const Service = model('Service', new Schema({ name: String, window: { type: oid, ref: 'Window' }, active: { type: Boolean, default: true }, requirements: [{ name: String, mandatory: Boolean, note: String, image: String }] }));
+export const Holiday = model('Holiday', new Schema({ date: String, name: String }));
+export const Otp = model('Otp', new Schema({ key: { type: String, unique: true }, hash: String, expiresAt: Date, attempts: { type: Number, default: 0 }, lastSent: Date, payload: { type: Object, default: {} } }));
+export const Counter = model('Counter', new Schema({ _id: String, n: { type: Number, default: 0 } }));
+const ap = new Schema({ student: { type: oid, ref: 'User' }, window: { type: oid, ref: 'Window' }, service: { type: oid, ref: 'Service' }, serviceName: String, reqSnapshot: Array, date: String, hour: Number, status: { type: String, default: 'pending' }, queueCode: String, qrToken: { type: String, unique: true, sparse: true }, checkedInAt: Date, calledAt: Date, rejoins: { type: Number, default: 0 }, holdUntil: Date, walkIn: { type: Boolean, default: false }, guestName: String, rescheduleAllowed: { type: Boolean, default: false }, rescheduleNote: String, reschedules: { type: Number, default: 0 }, prepared: [Number], verified: [Number], guestStudentNumber: String, guestCourse: String, startedAt: Date, completedAt: Date, checkInMethod: String, checkedInBy: { type: oid, ref: 'User' }, calledBy: { type: oid, ref: 'User' }, startedBy: { type: oid, ref: 'User' }, completedBy: { type: oid, ref: 'User' } }, { timestamps: true });
+ap.index({ window: 1, date: 1, status: 1 }); ap.index({ student: 1, createdAt: -1 });
+ap.index({ student: 1 }, { unique: true, partialFilterExpression: { status: { $in: ACTIVE }, student: { $exists: true } } });
+export const Appointment = model('Appointment', ap);
+export const Closure = model('Closure', new Schema({ window: { type: oid, ref: 'Window' }, date: String, hour: { type: Number, default: null }, reason: String }));
+export const AuditLog = model('AuditLog', new Schema({ at: { type: Date, default: Date.now, expires: '400d' }, actor: oid, actorName: String, actorRole: String, action: String, target: String, window: oid, status: Number, ip: String }));
+export const Course = model('Course', new Schema({ code: String, name: String, active: { type: Boolean, default: true } }));
